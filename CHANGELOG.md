@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+- New `examples/fastapi/` worked example: a small FastAPI app (`GET /tank` reads `Tank.Level` over
+  OPC UA, `POST /pump` writes `Pump.Setpoint` over Modbus, addresses from env/settings), tested
+  with `TestClient` and `@pytest.mark.fakeplc("../line1.yaml")`; CI runs `pytest examples/fastapi`.
+
 ## 0.1.0 (2026-11-22)
 
 First release.
