@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased
+
+### Added
+- Docker image published to `ghcr.io/danshinde/fakeplc` on version tags (linux/amd64 and
+  linux/arm64), with a CI smoke test that boots the container and reads holding register 0
+  (42.5 from `examples/line1.yaml`) over Modbus TCP. See the new "Docker" section in the
+  README and the root `Dockerfile`.
+
 ## 0.1.0 (2026-11-22)
 
 First release.
