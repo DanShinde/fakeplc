@@ -172,15 +172,16 @@ folders. Each tag has:
 
 | Field | Values |
 | --- | --- |
-| `type` | `bool`, `int` (16 bit), `uint`, `dint` (32 bit), `udint`, `real` (float32), `lreal` (float64) |
-| `modbus` | `coil N`, `discrete N`, `holding N`, `input N` (0-based); 32-bit types take 2 registers, `lreal` 4 |
+| `type` | `bool`, `int` (16 bit), `uint`, `dint` (32 bit), `udint`, `real` (float32), `lreal` (float64), `string` |
+| `modbus` | `coil N`, `discrete N`, `holding N`, `input N` (0-based); 32-bit types take 2 registers, `lreal` 4, a string `ceil(length / 2)` |
 | `value` | Start value |
+| `length` | String tags: max characters (default 32, required on Modbus). Over Modbus a string takes `ceil(length / 2)` registers, two ASCII bytes per register, NUL padded |
 | `readonly` | Default: true for discrete inputs, input registers and tags driven by `sim` or `logic` |
 | `sim` | Expression evaluated every scan |
 | `unit`, `description` | Free text; `description` shows in OPC UA |
 
 **Expressions** (`sim` and `logic`) use tag names, `t` (simulated seconds),
-numbers, `+ - * / // % **`, comparisons, `and or not`, `x if cond else y`, and
+numbers, strings, `+ - * / // % **`, comparisons, `and or not`, `x if cond else y`, and
 these functions:
 
 | Function | Value |

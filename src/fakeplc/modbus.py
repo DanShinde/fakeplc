@@ -168,7 +168,7 @@ class ModbusServer:
                 out.append(1 if values[name] else 0)
                 continue
             if name not in cache:
-                cache[name] = to_registers(tag.type, values[name], word_order)
+                cache[name] = to_registers(tag.type, values[name], word_order, tag.length)
             out.append(cache[name][offset])
         return out
 
@@ -191,8 +191,8 @@ class ModbusServer:
             if tag.type == "bool":
                 new_values[name] = bool(words[0])
                 continue
-            registers = to_registers(tag.type, current[name], self.spec.word_order)
+            registers = to_registers(tag.type, current[name], self.spec.word_order, tag.length)
             for offset, word in words.items():
                 registers[offset] = word
-            new_values[name] = from_registers(tag.type, registers, self.spec.word_order)
+            new_values[name] = from_registers(tag.type, registers, self.spec.word_order, tag.length)
         self.table.set_many(new_values, protocol="modbus")
