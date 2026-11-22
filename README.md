@@ -210,6 +210,10 @@ value with function 6 updates that half.
   protocols and test assertions on what your app wrote.
 - pymodbus ships a Modbus simulator with a web UI, without OPC UA.
 
+## Related projects
+
+- [tagbridge](https://github.com/DanShinde/tagbridge) bridges Modbus and OPC UA tags to MQTT (Sparkplug B). Its demo runs against `examples/line1.yaml`.
+
 ## Roadmap
 
 - Docker image `ghcr.io/danshinde/fakeplc`
