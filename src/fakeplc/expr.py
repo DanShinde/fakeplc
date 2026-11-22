@@ -134,8 +134,8 @@ class Expression:
 
     def _check(self, node: ast.expr) -> None:
         if isinstance(node, ast.Constant):
-            if not isinstance(node.value, (int, float, bool)):
-                raise ExpressionError(f"only numbers and booleans are allowed in {self.source!r}")
+            if not isinstance(node.value, (int, float, bool, str)):
+                raise ExpressionError(f"only numbers, booleans and strings are allowed in {self.source!r}")
         elif isinstance(node, (ast.Name, ast.Attribute)):
             name = _dotted(node)
             if name is None or any(part.startswith("__") for part in name.split(".")):

@@ -11,7 +11,15 @@ from typing import Any
 import yaml
 
 from .expr import Expression, ExpressionError
-from .types import REGISTER_COUNT, TYPES, coerce, default_value
+from .types import (
+    DEFAULT_STRING_LENGTH,
+    MAX_STRING_LENGTH,
+    REGISTER_COUNT,
+    TYPES,
+    coerce,
+    default_value,
+    string_register_count,
+)
 
 __all__ = ["ConfigError", "ModbusAddress", "ModbusSpec", "OpcUaSpec", "PLCConfig", "Rule", "TagSpec", "load_config"]
 
@@ -33,7 +41,7 @@ _TABLE_ALIASES = {
     "input_register": "input",
 }
 _TOP_KEYS = {"plc", "scan_ms", "autoscan", "seed", "opcua", "modbus", "tags", "logic"}
-_TAG_KEYS = {"type", "value", "modbus", "readonly", "sim", "unit", "description"}
+_TAG_KEYS = {"type", "value", "modbus", "readonly", "sim", "unit", "description", "length"}
 
 
 class ConfigError(ValueError):
@@ -59,10 +67,15 @@ class TagSpec:
     sim: Expression | None = None
     unit: str | None = None
     description: str | None = None
+    length: int = DEFAULT_STRING_LENGTH
 
     @property
     def register_count(self) -> int:
-        return 1 if self.type == "bool" else REGISTER_COUNT[self.type]
+        if self.type == "bool":
+            return 1
+        if self.type == "string":
+            return string_register_count(self.length)
+        return REGISTER_COUNT[self.type]
 
 
 @dataclass
@@ -151,16 +164,30 @@ def _parse_tag(name: str, raw: Any) -> tuple[TagSpec, bool]:
     type_ = str(raw.get("type", "")).lower()
     if type_ not in TYPES:
         raise _fail(where, f"type must be one of {', '.join(TYPES)}")
-    try:
-        value = coerce(type_, raw["value"]) if "value" in raw else default_value(type_)
-    except (TypeError, ValueError) as exc:
-        raise _fail(where, f"bad start value: {exc}") from None
+    length = DEFAULT_STRING_LENGTH
+    if "length" in raw:
+        if (
+            isinstance(raw["length"], bool)
+            or not isinstance(raw["length"], int)
+            or not 1 <= raw["length"] <= MAX_STRING_LENGTH
+        ):
+            raise _fail(where, f"length must be a whole number of characters between 1 and {MAX_STRING_LENGTH}")
+        length = raw["length"]
     modbus = _parse_address(where, raw["modbus"]) if raw.get("modbus") is not None else None
     if modbus is not None:
         if type_ == "bool" and modbus.table not in ("coil", "discrete"):
             raise _fail(where, "bool tags go on a coil or a discrete input")
         if type_ != "bool" and modbus.table not in ("holding", "input"):
             raise _fail(where, f"{type_} tags go on a holding or an input register")
+        if type_ == "string" and "length" not in raw:
+            raise _fail(
+                where,
+                "string tags on Modbus need an explicit length, e.g. {type: string, length: 20, modbus: holding 10}",
+            )
+    try:
+        value = coerce(type_, raw["value"], length) if "value" in raw else default_value(type_)
+    except (TypeError, ValueError) as exc:
+        raise _fail(where, f"bad start value: {exc}") from None
     sim = None
     if raw.get("sim") is not None:
         try:
@@ -179,6 +206,7 @@ def _parse_tag(name: str, raw: Any) -> tuple[TagSpec, bool]:
         sim=sim,
         unit=None if raw.get("unit") is None else str(raw["unit"]),
         description=None if raw.get("description") is None else str(raw["description"]),
+        length=length,
     )
     return spec, readonly is None
 

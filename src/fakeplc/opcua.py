@@ -29,6 +29,7 @@ VARIANT_TYPES: dict[str, ua.VariantType] = {
     "udint": ua.VariantType.UInt32,
     "real": ua.VariantType.Float,
     "lreal": ua.VariantType.Double,
+    "string": ua.VariantType.String,
 }
 
 
