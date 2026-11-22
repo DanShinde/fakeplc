@@ -49,7 +49,7 @@ def _tags(**tags: Any) -> dict[str, Any]:
     [
         ({}, "'tags' must be"),
         ({"tags": {"A": "bool"}, "extra": 1}, "unknown top-level key 'extra'"),
-        (_tags(A={"type": "string"}), "type must be one of"),
+        (_tags(A={"type": "str"}), "type must be one of"),
         (_tags(A={"type": "bool", "modbus": "holding 0"}), "bool tags go on a coil"),
         (_tags(A={"type": "real", "modbus": "coil 0"}), "real tags go on a holding"),
         (
@@ -84,3 +84,62 @@ def test_file_errors_name_the_file(tmp_path: Path) -> None:
         load_config(path)
     with pytest.raises(ConfigError, match="not found"):
         load_config(tmp_path / "missing.yaml")
+
+
+def test_string_tag_defaults_to_length_32_without_modbus() -> None:
+    config = load_config({"tags": {"Recipe.Name": {"type": "string", "value": "Default"}}})
+    spec = config.tags["Recipe.Name"]
+    assert spec.length == 32
+    assert spec.register_count == 16  # ceil(32 / 2)
+    assert spec.value == "Default"
+
+
+def test_string_tag_on_modbus_requires_explicit_length() -> None:
+    with pytest.raises(ConfigError, match="need an explicit length"):
+        load_config({"tags": {"Recipe.Name": {"type": "string", "modbus": "holding 10"}}})
+    config = load_config(
+        {"tags": {"Recipe.Name": {"type": "string", "length": 20, "modbus": "holding 10", "value": "Default"}}}
+    )
+    spec = config.tags["Recipe.Name"]
+    assert spec.length == 20
+    assert spec.register_count == 10
+    assert str(spec.modbus) == "holding 10"
+
+
+def test_string_start_value_longer_than_length_names_the_tag() -> None:
+    with pytest.raises(ConfigError, match="tag 'Recipe.Name'.*longer than 4 characters"):
+        load_config({"tags": {"Recipe.Name": {"type": "string", "length": 4, "value": "Default"}}})
+
+
+def test_string_tags_cannot_go_on_coils() -> None:
+    with pytest.raises(ConfigError, match="holding or an input register"):
+        load_config({"tags": {"Recipe.Name": {"type": "string", "length": 4, "modbus": "coil 0"}}})
+
+
+def test_string_tags_participate_in_overlap_check() -> None:
+    with pytest.raises(ConfigError, match="overlaps tag 'A'"):
+        load_config(
+            {
+                "tags": {
+                    "A": {"type": "string", "length": 4, "modbus": "holding 0"},  # registers 0..1
+                    "B": {"type": "uint", "modbus": "holding 1"},
+                }
+            }
+        )
+
+
+def test_bad_length_is_rejected() -> None:
+    for bad in (0, -1, 2.5, True):
+        with pytest.raises(ConfigError, match="length must be"):
+            load_config({"tags": {"A": {"type": "string", "length": bad}}})
+
+
+def test_logic_rule_with_string_constant() -> None:
+    config = load_config(
+        {
+            "tags": {"Mode": {"type": "int"}, "Recipe.Name": {"type": "string", "value": "Old"}},
+            "logic": ['Recipe.Name = "Clean" if Mode == 2 else Recipe.Name'],
+        }
+    )
+    assert config.logic[0].target == "Recipe.Name"
+    assert config.logic[0].expression.names == {"Mode", "Recipe.Name"}

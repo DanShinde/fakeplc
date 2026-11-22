@@ -130,3 +130,73 @@ def test_little_word_order() -> None:
             assert f32(client, regs, word_order="little") == 42.5
         finally:
             client.close()
+
+
+def _string_config() -> dict:
+    config = base_config()
+    config["tags"]["Recipe.Name"] = {"type": "string", "length": 20, "modbus": "holding 8", "value": "Default"}
+    return config
+
+
+@pytest.fixture(scope="module")
+def string_plc() -> Iterator[FakePLC]:
+    with FakePLC(_string_config(), autoscan=False) as plc:
+        yield plc
+
+
+def test_string_default_served_on_modbus(string_plc: FakePLC) -> None:
+    string_plc.reset()
+    client = ModbusTcpClient("127.0.0.1", port=string_plc.modbus_port)
+    assert client.connect()
+    try:
+        regs = client.read_holding_registers(8, count=10).registers  # ceil(20/2) registers
+        # "Default" = 44 65 66 61 75 6C 74, NUL padded to 20 chars
+        assert regs == [0x4465, 0x6661, 0x756C, 0x7400] + [0] * 6
+    finally:
+        client.close()
+
+
+def test_modbus_string_write_read_back_over_opcua(string_plc: FakePLC) -> None:
+    import asyncio
+
+    from asyncua import Client
+
+    string_plc.reset()
+    client = ModbusTcpClient("127.0.0.1", port=string_plc.modbus_port)
+    assert client.connect()
+    try:
+        assert not client.write_registers(8, [0x4142, 0x4300] + [0] * 8).isError()  # "ABC"
+    finally:
+        client.close()
+    assert string_plc.get("Recipe.Name") == "ABC"
+    assert string_plc.writes("Recipe.Name") == ["ABC"]
+    assert string_plc.journal("Recipe.Name")[0].protocol == "modbus"
+
+    async def read_name() -> object:
+        async with Client(string_plc.opcua_url) as ua_client:
+            return await ua_client.get_node(string_plc.node_id("Recipe.Name")).read_value()
+
+    assert asyncio.run(read_name()) == "ABC"
+
+
+def test_opcua_string_write_visible_over_modbus(string_plc: FakePLC) -> None:
+    import asyncio
+
+    from asyncua import Client, ua
+
+    string_plc.reset()
+
+    async def write_name() -> None:
+        async with Client(string_plc.opcua_url) as ua_client:
+            node = ua_client.get_node(string_plc.node_id("Recipe.Name"))
+            await node.write_value(ua.DataValue(ua.Variant("Clean", ua.VariantType.String)))
+
+    asyncio.run(write_name())
+    assert string_plc.get("Recipe.Name") == "Clean"
+    client = ModbusTcpClient("127.0.0.1", port=string_plc.modbus_port)
+    client.connect()
+    try:
+        regs = client.read_holding_registers(8, count=3).registers
+        assert regs == [0x436C, 0x6561, 0x6E00]  # "Cle" "an\0"
+    finally:
+        client.close()

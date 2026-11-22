@@ -3,6 +3,13 @@
 ## Unreleased
 
 ### Added
+- `string` tag type: ASCII text with a configurable `length` (default 32, required on
+  Modbus), stored as two bytes per register (`ceil(length / 2)` registers, NUL padded),
+  exposed as `ua.VariantType.String` over OPC UA, and allowed as string constants in
+  `sim`/`logic` expressions.
+- New `examples/fastapi/` worked example: a small FastAPI app (`GET /tank` reads `Tank.Level` over
+  OPC UA, `POST /pump` writes `Pump.Setpoint` over Modbus, addresses from env/settings), tested
+  with `TestClient` and `@pytest.mark.fakeplc("../line1.yaml")`; CI runs `pytest examples/fastapi`.
 - Docker image published to `ghcr.io/danshinde/fakeplc` on version tags (linux/amd64 and
   linux/arm64), with a CI smoke test that boots the container and reads holding register 0
   (42.5 from `examples/line1.yaml`) over Modbus TCP. See the new "Docker" section in the
