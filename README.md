@@ -131,6 +131,11 @@ def plc_settings(settings, fake_plc):
     settings.PLC_MODBUS_PORT = fake_plc.modbus_port
 ```
 
+For a web framework, [examples/fastapi](examples/fastapi/) is a worked example: a small FastAPI
+app whose `GET /tank` reads `Tank.Level` over OPC UA and whose `POST /pump` writes
+`Pump.Setpoint` over Modbus, tested with `TestClient` and
+`@pytest.mark.fakeplc("../line1.yaml")` — run `pytest examples/fastapi` (CI does).
+
 ### The PLC API
 
 | Call | Does |
