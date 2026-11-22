@@ -53,7 +53,7 @@ fakeplc = "fakeplc.pytest_plugin"
 path = "src/fakeplc/__init__.py"
 
 [tool.hatch.build.targets.sdist]
-include = ["src", "tests", "examples", "README.md", "CHANGELOG.md", "LICENSE"]
+include = ["src", "tests", "examples", "README.md", "CHANGELOG.md", "CONTRIBUTING.md", "LICENSE"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

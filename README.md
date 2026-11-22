@@ -10,6 +10,8 @@
 that talks to PLCs (SCADA, HMIs, Django and FastAPI dashboards, gateways, data
 loggers) can be tested in CI without hardware.
 
+![fakeplc serve showing client writes, then a pytest run passing](https://raw.githubusercontent.com/DanShinde/fakeplc/main/docs/demo.gif)
+
 ```python
 import pytest
 
@@ -233,6 +235,11 @@ pip install -e ".[test]" ruff mypy
 pytest
 ruff check . && ruff format --check . && mypy
 ```
+
+## Contributing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md). Issues labelled
+[good first issue](https://github.com/DanShinde/fakeplc/labels/good%20first%20issue) are a good place to start.
 
 ## License
 
