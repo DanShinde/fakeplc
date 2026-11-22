@@ -48,6 +48,24 @@ pip install fakeplc
 Python 3.10 or newer. OPC UA comes from [asyncua](https://github.com/FreeOpcUa/opcua-asyncio);
 the Modbus TCP server is built in and has no extra dependencies.
 
+## Docker
+
+A ready-made image is published to `ghcr.io/danshinde/fakeplc` on every version tag
+(linux/amd64 and linux/arm64), so non-Python tools (Node-RED, Grafana, Ignition,
+docker-compose demos) can start a fake PLC with one line:
+
+```console
+$ docker run --rm -p 4840:4840 -p 5020:5020 ghcr.io/danshinde/fakeplc
+# serves the bundled examples/line1.yaml: OPC UA on 4840, Modbus TCP on 5020
+
+$ docker run --rm -p 4840:4840 -p 5020:5020 -v "$PWD/plc.yaml:/plc.yaml" \
+    ghcr.io/danshinde/fakeplc serve /plc.yaml --host 0.0.0.0
+```
+
+The image is built from `python:3.13-slim` and installs the package from the checkout at build time (`pip install .` in the Dockerfile — not `pip install fakeplc` at runtime), with `ENTRYPOINT ["fakeplc"]`,
+so anything after the image name is passed to the `fakeplc` CLI; the default command
+serves `examples/line1.yaml`. Build it yourself with `docker build -t fakeplc .`.
+
 ## Quick start
 
 `line1.yaml`:
