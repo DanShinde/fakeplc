@@ -62,7 +62,7 @@ $ docker run --rm -p 4840:4840 -p 5020:5020 -v "$PWD/plc.yaml:/plc.yaml" \
     ghcr.io/danshinde/fakeplc serve /plc.yaml --host 0.0.0.0
 ```
 
-The image is `python:3.13-slim` with `pip install fakeplc` and `ENTRYPOINT ["fakeplc"]`,
+The image is built from `python:3.13-slim` and installs the package from the checkout at build time (`pip install .` in the Dockerfile — not `pip install fakeplc` at runtime), with `ENTRYPOINT ["fakeplc"]`,
 so anything after the image name is passed to the `fakeplc` CLI; the default command
 serves `examples/line1.yaml`. Build it yourself with `docker build -t fakeplc .`.
 

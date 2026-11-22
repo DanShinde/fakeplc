@@ -14,5 +14,9 @@ COPY examples ./examples
 # 4840 = OPC UA, 5020 = Modbus TCP.
 EXPOSE 4840 5020
 
+# Run as non-root: both ports are above 1024, so nothing else changes.
+RUN useradd --create-home --uid 1000 plc
+USER plc
+
 ENTRYPOINT ["fakeplc"]
 CMD ["serve", "/app/examples/line1.yaml", "--host", "0.0.0.0"]
