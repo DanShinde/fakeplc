@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased
+
+### Added
+- `string` tag type: ASCII text with a configurable `length` (default 32, required on
+  Modbus), stored as two bytes per register (`ceil(length / 2)` registers, NUL padded),
+  exposed as `ua.VariantType.String` over OPC UA, and allowed as string constants in
+  `sim`/`logic` expressions.
+
 ## 0.1.0 (2026-11-22)
 
 First release.

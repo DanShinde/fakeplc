@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import pytest
 
-from fakeplc.types import coerce, from_registers, to_registers
+from fakeplc.types import coerce, default_value, from_registers, string_register_count, to_registers
 
 
 @pytest.mark.parametrize(
@@ -43,3 +43,49 @@ def test_coerce_bool_from_strings() -> None:
     assert coerce("bool", "false") is False
     with pytest.raises(ValueError):
         coerce("bool", "maybe")
+
+
+@pytest.mark.parametrize(
+    ("value", "length", "words"),
+    [
+        ("AB", 20, [0x4142] + [0] * 9),
+        ("ABC", 20, [0x4142, 0x4300] + [0] * 8),  # odd length: last byte NUL padded
+        ("", 4, [0, 0]),
+        ("Hi", 2, [0x4869]),
+        ("Default", 7, [0x4465, 0x6661, 0x756C, 0x7400]),  # ceil(7/2) = 4 registers
+    ],
+)
+def test_string_register_round_trip(value: str, length: int, words: list[int]) -> None:
+    assert to_registers("string", value, length=length) == words
+    assert from_registers("string", words, length=length) == value
+    assert to_registers("string", value, "little", length) == list(reversed(words))
+    assert from_registers("string", list(reversed(words)), "little", length) == value
+
+
+def test_string_register_count() -> None:
+    assert string_register_count(1) == 1
+    assert string_register_count(2) == 1
+    assert string_register_count(3) == 2
+    assert string_register_count(20) == 10
+
+
+def test_string_too_long_has_a_clear_error() -> None:
+    with pytest.raises(ValueError, match="longer than 3 characters"):
+        to_registers("string", "abcd", length=3)
+    with pytest.raises(ValueError, match="longer than 4 characters"):
+        coerce("string", "too long for 4", 4)
+
+
+def test_string_must_be_ascii() -> None:
+    with pytest.raises(ValueError, match="not ASCII"):
+        coerce("string", "héllo", 10)
+    with pytest.raises(ValueError, match="not ASCII"):
+        to_registers("string", "héllo", length=10)
+
+
+def test_coerce_and_default_string() -> None:
+    assert coerce("string", "AB", 20) == "AB"
+    assert coerce("string", 42, 10) == "42"
+    assert default_value("string") == ""
+    with pytest.raises(ValueError, match="cannot convert"):
+        coerce("string", ["x"], 10)

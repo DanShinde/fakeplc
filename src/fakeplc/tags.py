@@ -81,7 +81,7 @@ class TagTable:
     def set(self, name: str, value: Any, protocol: str | None = None, dirty: bool = True) -> Any:
         """Store a value. ``protocol`` records the write in the journal."""
         spec = self.spec(name)
-        value = coerce(spec.type, value)
+        value = coerce(spec.type, value, spec.length)
         with self._lock:
             self._values[name] = value
             if dirty:
@@ -92,7 +92,7 @@ class TagTable:
         return value
 
     def set_many(self, values: dict[str, Any], protocol: str | None = None) -> None:
-        coerced = {name: coerce(self.spec(name).type, value) for name, value in values.items()}
+        coerced = {name: coerce(self.spec(name).type, value, self.spec(name).length) for name, value in values.items()}
         with self._lock:
             for name, value in coerced.items():
                 self.set(name, value, protocol)

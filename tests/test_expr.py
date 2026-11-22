@@ -53,7 +53,6 @@ def test_keyword_arguments_and_helpers() -> None:
         "open('x')",
         "x.__class__",
         "(lambda: 1)()",
-        "'text'",
         "[1, 2]",
         "x[0]",
         "a := 1",
@@ -74,3 +73,11 @@ def test_unknown_names_are_reported() -> None:
 def test_runtime_errors_name_the_expression() -> None:
     with pytest.raises(ExpressionError, match="1 / x"):
         ev("1 / x", x=0)
+
+
+def test_string_constants() -> None:
+    assert ev('"Clean" if Mode == 2 else Name', Mode=2, Name="Old") == "Clean"
+    assert ev('"Clean" if Mode == 2 else Name', Mode=1, Name="Old") == "Old"
+    assert ev('Name + "!"', Name="Hi") == "Hi!"
+    with pytest.raises(ExpressionError, match="not allowed"):
+        Expression("[1, 2]")
