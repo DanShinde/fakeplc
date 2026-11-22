@@ -1,0 +1,79 @@
+[build-system]
+requires = ["hatchling>=1.24"]
+build-backend = "hatchling.build"
+
+[project]
+name = "fakeplc"
+dynamic = ["version"]
+description = "A fake PLC for your test suite: one YAML file, OPC UA and Modbus TCP, with a pytest plugin."
+readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
+requires-python = ">=3.10"
+authors = [{ name = "DanShinde" }]
+keywords = ["plc", "opc-ua", "opcua", "modbus", "modbus-tcp", "simulator", "pytest", "testing", "scada", "industrial-automation"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Framework :: Pytest",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Manufacturing",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Topic :: Software Development :: Testing",
+    "Topic :: Software Development :: Testing :: Mocking",
+    "Topic :: System :: Hardware",
+    "Typing :: Typed",
+]
+dependencies = [
+    "asyncua>=1.1",
+    "pyyaml>=6",
+]
+
+[project.optional-dependencies]
+test = ["pytest>=8", "pymodbus>=3.6"]
+
+[project.urls]
+Homepage = "https://github.com/DanShinde/fakeplc"
+Issues = "https://github.com/DanShinde/fakeplc/issues"
+Changelog = "https://github.com/DanShinde/fakeplc/blob/main/CHANGELOG.md"
+
+[project.scripts]
+fakeplc = "fakeplc.cli:main"
+
+[project.entry-points.pytest11]
+fakeplc = "fakeplc.pytest_plugin"
+
+[tool.hatch.version]
+path = "src/fakeplc/__init__.py"
+
+[tool.hatch.build.targets.sdist]
+include = ["src", "tests", "examples", "README.md", "CHANGELOG.md", "LICENSE"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra"
+filterwarnings = ["ignore::DeprecationWarning:asyncua.*"]
+
+[tool.ruff]
+line-length = 120
+target-version = "py310"
+extend-exclude = ["*.md"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP", "SIM", "RUF"]
+ignore = ["B905", "RUF043"]
+
+[tool.mypy]
+strict = true
+packages = ["fakeplc"]
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = ["asyncua", "asyncua.*"]
+implicit_reexport = true
